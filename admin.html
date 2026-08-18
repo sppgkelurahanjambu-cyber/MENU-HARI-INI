@@ -188,59 +188,48 @@
 
   // CEK LOGIN
 
-  async function cekLogin() {
-
-    const {
-      data: {
-        session
-      }
-    } = await supabase.auth.getSession();
-
-
-    if (session) {
-
-      loginPanel.style.display =
-        "none";
-
-      adminPanel.style.display =
-        "block";
-
-    }
-
-  }
-
-
-  // LOGIN
-
   async function login() {
 
-    const email =
-      document.getElementById("email").value;
+  const email =
+    document.getElementById("email").value.trim();
 
-    const password =
-      document.getElementById("password").value;
+  const password =
+    document.getElementById("password").value;
 
+  status.style.color = "#555";
+  status.textContent = "Sedang login...";
+
+  console.log("Mencoba login:", email);
+
+  const {
+    data,
+    error
+  } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  console.log("Hasil login:", data);
+  console.log("Error login:", error);
+
+  if (error) {
+
+    status.style.color = "#dc2626";
 
     status.textContent =
-      "Sedang login...";
+      "LOGIN GAGAL: " + error.message;
 
+    return;
+  }
 
-    const {
-      error
-    } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+  status.style.color = "#16a34a";
 
+  status.textContent =
+    "LOGIN BERHASIL!";
 
-    if (error) {
-
-      status.textContent =
-        "Login gagal: " + error.message;
-
-      return;
-
-    }
+  loginPanel.style.display = "none";
+  adminPanel.style.display = "block";
+}
 
 
     status.textContent =
