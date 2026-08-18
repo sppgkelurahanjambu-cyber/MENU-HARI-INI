@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Informasi Hari Ini</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f4f6f8;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      background: white;
+      border-radius: 18px;
+      padding: 25px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #222;
+      font-size: 28px;
+    }
+
+    #tanggal {
+      color: #777;
+      margin-bottom: 20px;
+    }
+
+    #foto {
+      width: 100%;
+      max-height: 75vh;
+      object-fit: contain;
+      border-radius: 12px;
+      display: none;
+      background: #eee;
+    }
+
+    #judul {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 15px 0;
+      color: #222;
+    }
+
+    #loading {
+      color: #777;
+    }
+
+    #pesan {
+      color: #d00;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>INFORMASI HARI INI</h1>
+
+    <div id="tanggal"></div>
+
+    <div id="loading">
+      Memuat informasi...
+    </div>
+
+    <div id="judul"></div>
+
+    <img id="foto" alt="Informasi hari ini">
+
+    <div id="pesan">
+      Belum ada informasi yang tersedia.
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+
+    // ==========================================
+    // MASUKKAN DATA SUPABASE DI SINI
+    // ==========================================
+
+    const SUPABASE_URL = "sb_publishable_tNoifZQwebUyRHGIha0p1g_v1V0hOyq";
+    const SUPABASE_ANON_KEY = "sb_secret_D3GLz3D4sZmq6KcPBQTZmQ_x8WmMHqz";
+
+    // ==========================================
+
+    const { createClient } =
+      supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+      );
+
+    const tanggalElement =
+      document.getElementById("tanggal");
+
+    const fotoElement =
+      document.getElementById("foto");
+
+    const judulElement =
+      document.getElementById("judul");
+
+    const loadingElement =
+      document.getElementById("loading");
+
+    const pesanElement =
+      document.getElementById("pesan");
+
+
+    function tampilkanTanggal() {
+
+      const sekarang = new Date();
+
+      const tanggal =
+        sekarang.toLocaleDateString(
+          "id-ID",
+          {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+          }
+        );
+
+      tanggalElement.textContent =
+        tanggal;
+    }
+
+
+    async function ambilInformasi() {
+
+      const { data, error } =
+        await supabase
+          .from("informasi")
+          .select("*")
+          .eq("aktif", true)
+          .order("tanggal_upload", {
+            ascending: false
+          })
+          .limit(1);
+
+      loadingElement.style.display =
+        "none";
+
+
+      if (error) {
+
+        console.error(error);
+
+        pesanElement.textContent =
+          "Terjadi kesalahan saat mengambil informasi.";
+
+        pesanElement.style.display =
+          "block";
+
+        return;
+      }
+
+
+      if (!data || data.length === 0) {
+
+        pesanElement.textContent =
+          "Belum ada informasi yang tersedia.";
+
+        pesanElement.style.display =
+          "block";
+
+        return;
+      }
+
+
+      const informasi =
+        data[0];
+
+
+      judulElement.textContent =
+        informasi.judul || "";
+
+
+      fotoElement.src =
+        informasi.foto_url;
+
+      fotoElement.style.display =
+        "block";
+
+    }
+
+
+    tampilkanTanggal();
+
+    ambilInformasi();
+
+  </script>
+
+</body>
+</html>
