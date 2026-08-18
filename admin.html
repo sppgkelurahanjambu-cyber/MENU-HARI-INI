@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Admin - Informasi Hari Ini</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f4f6f8;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 18px;
+      box-shadow: 0 5px 25px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    #adminPanel {
+      display: none;
+    }
+
+    #status {
+      text-align: center;
+      margin-top: 15px;
+      color: #555;
+    }
+
+    #preview {
+      width: 100%;
+      margin-top: 15px;
+      border-radius: 12px;
+      display: none;
+    }
+
+    .logout {
+      background: #dc2626;
+    }
+
+    .logout:hover {
+      background: #b91c1c;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>ADMIN INFORMASI</h1>
+
+  <!-- LOGIN -->
+
+  <div id="loginPanel">
+
+    <input
+      type="email"
+      id="email"
+      placeholder="Email admin"
+    >
+
+    <input
+      type="password"
+      id="password"
+      placeholder="Password"
+    >
+
+    <button onclick="login()">
+      LOGIN
+    </button>
+
+  </div>
+
+
+  <!-- ADMIN -->
+
+  <div id="adminPanel">
+
+    <input
+      type="text"
+      id="judul"
+      placeholder="Judul informasi"
+    >
+
+    <input
+      type="file"
+      id="file"
+      accept="image/*"
+    >
+
+    <img id="preview">
+
+    <button onclick="uploadFoto()">
+      UPLOAD & PUBLIKASIKAN
+    </button>
+
+    <button
+      class="logout"
+      onclick="logout()"
+    >
+      LOGOUT
+    </button>
+
+  </div>
+
+
+  <div id="status"></div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+  // ==========================================
+  // MASUKKAN DATA SUPABASE
+  // ==========================================
+
+  const SUPABASE_URL =
+    "sb_publishable_tNoifZQwebUyRHGIha0p1g_v1V0hOyq";
+
+  const SUPABASE_ANON_KEY =
+    "sb_secret_tZSEbab8aFeFmN2z5OLPRw_x-4SWCFK";
+
+  // ==========================================
+
+
+  const { createClient } =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+
+  const loginPanel =
+    document.getElementById("loginPanel");
+
+  const adminPanel =
+    document.getElementById("adminPanel");
+
+  const status =
+    document.getElementById("status");
+
+
+  // CEK LOGIN
+
+  async function cekLogin() {
+
+    const {
+      data: {
+        session
+      }
+    } = await supabase.auth.getSession();
+
+
+    if (session) {
+
+      loginPanel.style.display =
+        "none";
+
+      adminPanel.style.display =
+        "block";
+
+    }
+
+  }
+
+
+  // LOGIN
+
+  async function login() {
+
+    const email =
+      document.getElementById("email").value;
+
+    const password =
+      document.getElementById("password").value;
+
+
+    status.textContent =
+      "Sedang login...";
+
+
+    const {
+      error
+    } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+
+    if (error) {
+
+      status.textContent =
+        "Login gagal: " + error.message;
+
+      return;
+
+    }
+
+
+    status.textContent =
+      "Login berhasil.";
+
+    loginPanel.style.display =
+      "none";
+
+    adminPanel.style.display =
+      "block";
+
+  }
+
+
+  // PREVIEW FOTO
+
+  document
+    .getElementById("file")
+    .addEventListener(
+      "change",
+      function() {
+
+        const file =
+          this.files[0];
+
+        if (!file) return;
+
+        const preview =
+          document.getElementById("preview");
+
+        preview.src =
+          URL.createObjectURL(file);
+
+        preview.style.display =
+          "block";
+
+      }
+    );
+
+
+  // UPLOAD
+
+  async function uploadFoto() {
+
+    const file =
+      document.getElementById("file").files[0];
+
+    const judul =
+      document.getElementById("judul").value;
+
+
+    if (!file) {
+
+      status.textContent =
+        "Pilih foto terlebih dahulu.";
+
+      return;
+
+    }
+
+
+    status.textContent =
+      "Mengupload foto...";
+
+
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
+
+
+    if (!user) {
+
+      status.textContent =
+        "Silakan login terlebih dahulu.";
+
+      return;
+
+    }
+
+
+    // Nama file unik
+
+    const namaFile =
+      Date.now() +
+      "-" +
+      file.name;
+
+
+    // UPLOAD KE STORAGE
+
+    const {
+      error: uploadError
+    } = await supabase.storage
+      .from("foto-informasi")
+      .upload(
+        namaFile,
+        file
+      );
+
+
+    if (uploadError) {
+
+      status.textContent =
+        "Upload gagal: " +
+        uploadError.message;
+
+      return;
+
+    }
+
+
+    // AMBIL URL FOTO
+
+    const {
+      data: publicData
+    } = supabase.storage
+      .from("foto-informasi")
+      .getPublicUrl(namaFile);
+
+
+    const fotoURL =
+      publicData.publicUrl;
+
+
+    // NONAKTIFKAN FOTO LAMA
+
+    const {
+      error: updateError
+    } = await supabase
+      .from("informasi")
+      .update({
+        aktif: false
+      })
+      .eq("aktif", true);
+
+
+    if (updateError) {
+
+      status.textContent =
+        "Gagal memperbarui foto lama.";
+
+      return;
+
+    }
+
+
+    // SIMPAN FOTO BARU
+
+    const {
+      error: insertError
+    } = await supabase
+      .from("informasi")
+      .insert({
+
+        judul:
+          judul || "Informasi Hari Ini",
+
+        foto_url:
+          fotoURL,
+
+        aktif:
+          true
+
+      });
+
+
+    if (insertError) {
+
+      status.textContent =
+        "Gagal menyimpan informasi: " +
+        insertError.message;
+
+      return;
+
+    }
+
+
+    status.textContent =
+      "✅ Foto berhasil dipublikasikan!";
+
+    document
+      .getElementById("file")
+      .value = "";
+
+  }
+
+
+  // LOGOUT
+
+  async function logout() {
+
+    await supabase.auth.signOut();
+
+    adminPanel.style.display =
+      "none";
+
+    loginPanel.style.display =
+      "block";
+
+    status.textContent =
+      "Kamu sudah logout.";
+
+  }
+
+
+  cekLogin();
+
+</script>
+
+</body>
+</html>
